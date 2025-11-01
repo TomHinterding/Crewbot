@@ -1,23 +1,27 @@
-import client as c
+import api.client as c
 import pandas as pd
+import processing.datamanager as dm
 
 class getTables:
     def __init__(self):
         self.api = c.APIManager()
 
     def getClantable(self, clantag):
-        clantag = self.api.urlTag(clantag)
+        clantag = c.urlTag(clantag)
         responseData = self.api.getResponse(f"{self.api.baseUrl}clans/{clantag}")
-        clanData = {"tag" : [], "name" : [], "members" : [], "clanLevel" : [], "warWins" : [], "warTies" : [], "warLosses": [], "isWarLogPublic" : []}
+        clanData = createTable("Clans")
         for col in clanData:
-            clanData[col].append(responseData[col])
+            if col in responseData:
+                clanData[col].append(responseData[col])
+            else:
+                clanData[col].append(0)
         clanData = pd.DataFrame(clanData)
         return clanData
     
     def getMemberTable(self, clantag):
-        clantag = self.api.urlTag(clantag)
+        clantag = c.urlTag(clantag)
         responseData = self.api.getResponse(f"{self.api.baseUrl}clans/{clantag}")
-        memberDict = {"name" : [], "tag" : [], "role" : [], "townHallLevel" : [], "trophies" : [], "clanRank" : [], "donationsReceived" : [], "donations" : [], "expLevel" : []}
+        memberDict = createTable("Players")
         rawMemberList = responseData["memberList"]
         for i in range(len(rawMemberList)):
             for col in memberDict:
@@ -25,3 +29,92 @@ class getTables:
         memberDict = pd.DataFrame(memberDict)
         memberDict["role"] = memberDict["role"].replace("admin", "elder")
         return memberDict
+    
+    def getWartable(self, clantag):
+        clantag  = c.urlTag(clantag)
+        responseData = self.api.getResponse(f"{self.api.baseUrl}clans/{clantag}/currentwar")
+        warDict = createTable("Wars")
+        if "notInWar" != responseData["state"]:
+            warDict["startTime"].append(responseData["startTime"])
+            warDict["clantag1"].append(responseData["clan"]["tag"])
+            warDict["clantag2"].append(responseData["opponent"]["tag"])
+            warDict["stars"].append(responseData["clan"]["stars"])
+            warDict["percentage"].append(responseData["clan"]["destructionPercentage"])
+            warDict["opponentStars"].append(responseData["opponent"]["stars"])
+            warDict["opponentPercentage"].append(responseData["opponent"]["destructionPercentage"])
+        warDict = pd.DataFrame(warDict)
+        return warDict
+    
+    def getAttacktable(self, clantag):
+        clantag = c.urlTag(clantag)
+        responseData = self.api.getResponse(f"{self.api.baseUrl}clans/{clantag}/currentwar")
+        attackDict = createTable("Attacks")
+        rawAttackList = responseData["clan"]["members"]
+        if "notInWar" != responseData["state"]:
+            """"playertag" :[], "warclantag1" : [], "wardate" : [], "stars" : [], "percentage" : []"""
+            for u in range(len(rawAttackList)):
+                if "attacks" in rawAttackList[u]:
+                    for i in range(len(rawAttackList[u]["attacks"])):
+                        attackDict["attackertag"].append(rawAttackList[u]["tag"])
+                        attackDict["attackername"].append(rawAttackList[u]["name"])
+                        attackDict["defendertag"].append(rawAttackList[u]["attacks"][i]["defenderTag"])
+                        attackDict["warclantag"].append(responseData["clan"]["tag"])
+                        attackDict["wardate"].append(responseData["startTime"])
+                        attackDict["stars"].append(rawAttackList[u]["attacks"][i]["stars"])
+                        attackDict["percentage"].append(rawAttackList[u]["attacks"][i]["destructionPercentage"])
+            attackDict = pd.DataFrame(attackDict)
+            return attackDict
+
+
+class newData:
+    def __init__(self):
+        self.dm = dm.Datamanager()
+        self.gt = getTables()
+
+    def addNewClan(self, df, tag):
+        newData = self.gt.getClantable(tag)
+        newDf = self.dm.upsert(df, newData, "tag")
+        return newDf
+    
+    def addNewWar(self, df, tag):
+        newData = self.gt.getWartable(tag)
+        newDf = self.dm.upsert(df, newData, ["startTime", "clantag1"])
+        return newDf
+    
+    def addNewAttacks(self, df, tag):
+        newData = self.gt.getAttacktable(tag)
+        newDf = self.dm.upsert(df, newData, ["wardate", "attackertag", "defendertag"])
+        return newDf
+
+
+class updateTables:
+    def __init__ (self):
+        self.gt = getTables()
+        self.dm = dm.Datamanager()
+
+    def updateClanTable(self, df):
+        clantags = df["tag"].values.tolist()
+        for clantag in clantags:
+            newClanData = self.gt.getClantable(clantag)
+            df = self.dm.upsert(df, newClanData, "tag")
+        return df
+    
+    def updatecurrentWar(self, df, clansdf):
+        clantags = clansdf["tag"].values.tolist()
+        for clantag in clantags:
+            newWarData = self.gt.getWartable(clantag)
+            df = self.dm.upsert(df, newWarData, ["startTime", "attackertag", "defendertag"])
+        return df
+
+
+
+    def updateTable(self, Tablename):
+        pass
+
+def createTable(tablename):
+    Clans = {"tag" : [], "name" : [], "members" : [], "clanLevel" : [], "warWins" : [], "warTies" : [], "warLosses": [], "isWarLogPublic" : []}
+    Players = {"tag" : [], "name" : [], "clantag" : [], "role" : [], "townHallLevel" : [], "trophies" : [], "clanRank" : [], "donationsReceived" : [], "donations" : [], "expLevel" : []}
+    Wars = {"startTime": [], "clantag1" : [], "clantag2" : [], "stars" : [], "percentage": [], "opponentStars" : [], "opponentPercentage" : []}
+    Attacks = {"attackertag" :[], "attackername" : [], "defendertag" : [], "warclantag" : [], "wardate" : [], "stars" : [], "percentage" : []}
+    Tables = {"Clans" : Clans, "Players" : Players, "Wars" : Wars, "Attacks" : Attacks}
+    return Tables[tablename]
