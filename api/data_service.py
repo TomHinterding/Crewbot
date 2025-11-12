@@ -45,23 +45,46 @@ class getTables:
         warDict = pd.DataFrame(warDict)
         return warDict
     
+
+    #gets the Attacktable for the current war of the selected clan:
+    #The information in this table includes:
+    #attackertag, attackername, defendertag, warclantag, wardate, stars, percentage, and attacknum. The attackertag, wardate and attacknum form the primary Key
+    #clantag and wardate are foreign key from the clanwar table
+    #attackertag is a forgein key from the playertable
     def getAttacktable(self, clantag):
         clantag = c.urlTag(clantag)
         responseData = self.api.getResponse(f"{self.api.baseUrl}clans/{clantag}/currentwar")
         attackDict = createTable("Attacks")
-        rawAttackList = responseData["clan"]["members"]
         if "notInWar" != responseData["state"]:
-            """"playertag" :[], "warclantag1" : [], "wardate" : [], "stars" : [], "percentage" : []"""
+            rawAttackList = responseData["clan"]["members"]
             for u in range(len(rawAttackList)):
                 if "attacks" in rawAttackList[u]:
                     for i in range(len(rawAttackList[u]["attacks"])):
                         attackDict["attackertag"].append(rawAttackList[u]["tag"])
                         attackDict["attackername"].append(rawAttackList[u]["name"])
-                        attackDict["defendertag"].append(rawAttackList[u]["attacks"][i]["defenderTag"])
+                        attackDict["attacknum"].append(i+1)
                         attackDict["warclantag"].append(responseData["clan"]["tag"])
                         attackDict["wardate"].append(responseData["startTime"])
                         attackDict["stars"].append(rawAttackList[u]["attacks"][i]["stars"])
                         attackDict["percentage"].append(rawAttackList[u]["attacks"][i]["destructionPercentage"])
+                    if len(rawAttackList[u]["attacks"]) == 1:
+                        attackDict["attackertag"].append(rawAttackList[u]["tag"])
+                        attackDict["attackername"].append(rawAttackList[u]["name"])
+                        attackDict["attacknum"].append(2)
+                        attackDict["warclantag"].append(responseData["clan"]["tag"])
+                        attackDict["wardate"].append(responseData["startTime"])
+                        attackDict["stars"].append(0)
+                        attackDict["percentage"].append(0)
+                else:
+                    for i in 2:
+                        attackDict["attackertag"].append(rawAttackList[u]["tag"])
+                        attackDict["attackername"].append(rawAttackList[u]["name"])
+                        attackDict["attacknum"].append(i+1)
+                        attackDict["warclantag"].append(responseData["clan"]["tag"])
+                        attackDict["wardate"].append(responseData["startTime"])
+                        attackDict["stars"].append(0)
+                        attackDict["percentage"].append(0)
+
             attackDict = pd.DataFrame(attackDict)
             return attackDict
 
@@ -83,7 +106,7 @@ class newData:
     
     def addNewAttacks(self, df, tag):
         newData = self.gt.getAttacktable(tag)
-        newDf = self.dm.upsert(df, newData, ["wardate", "attackertag", "defendertag"])
+        newDf = self.dm.upsert(df, newData, ["wardate", "attackertag", "attacknum"])
         return newDf
 
 
@@ -103,7 +126,7 @@ class updateTables:
         clantags = clansdf["tag"].values.tolist()
         for clantag in clantags:
             newWarData = self.gt.getWartable(clantag)
-            df = self.dm.upsert(df, newWarData, ["startTime", "attackertag", "defendertag"])
+            df = self.dm.upsert(df, newWarData, ["startTime", "attackertag", "attacknum"])
         return df
 
 
@@ -111,10 +134,11 @@ class updateTables:
     def updateTable(self, Tablename):
         pass
 
+#creates a Table with predefined column names based on Keyword you use
 def createTable(tablename):
     Clans = {"tag" : [], "name" : [], "members" : [], "clanLevel" : [], "warWins" : [], "warTies" : [], "warLosses": [], "isWarLogPublic" : []}
     Players = {"tag" : [], "name" : [], "clantag" : [], "role" : [], "townHallLevel" : [], "trophies" : [], "clanRank" : [], "donationsReceived" : [], "donations" : [], "expLevel" : []}
     Wars = {"startTime": [], "clantag1" : [], "clantag2" : [], "stars" : [], "percentage": [], "opponentStars" : [], "opponentPercentage" : []}
-    Attacks = {"attackertag" :[], "attackername" : [], "defendertag" : [], "warclantag" : [], "wardate" : [], "stars" : [], "percentage" : []}
+    Attacks = {"attackertag" :[], "attackername" : [], "attacknum" : [], "warclantag" : [], "wardate" : [], "stars" : [], "percentage" : []}
     Tables = {"Clans" : Clans, "Players" : Players, "Wars" : Wars, "Attacks" : Attacks}
     return Tables[tablename]

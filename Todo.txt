@@ -1,0 +1,17 @@
+Ticked off: functions to get the api data, format it and save aswell as update the data to files
+
+Todo:
+-discord frontend:
+    Controlable:
+    -What Clan/Clans (in progress) Clan hinzufügen funkt, clan entfernen noch einfügen
+    -What players should be tracked and what accounts do they own (fast) autocomplete muss noch rin da
+
+-backend:
+-fetching the data for those clans and players
+-formatting it for the excel sheets (is it possible to know if a player was set to red when the war started?)
+-connecting it to an online excel sheet:
+-displaying that data
+
+Questions to solve:
+How do I update the data to be accurate and hopefull not muss last minute attacks(Usually clanwar search takes 1-2 minutes to start again at least)
+

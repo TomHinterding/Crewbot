@@ -21,7 +21,7 @@ if __name__ == "__main__":
     print(Wars)
     addclan = True
     while addclan == True:
-        Wars = nd.addNewWar(Wars, input("enter another Clantag:"))
+        Wars = nd.addNewAttacks(Wars, input("enter another Clantag:"))
         dm.saveToFile(Wars, "Clans")
         print(Wars)
         addclan = input("Do you want to add another Clan to the table? (y/n):").lower().startswith('y')

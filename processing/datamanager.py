@@ -9,16 +9,18 @@ class Datamanager:
         os.makedirs(self.storage_dir, exist_ok=True)
 
     def upsert(self, df1, df2, indexvariable):
-        df1[indexvariable] = df1[indexvariable].astype(str)
-        df2[indexvariable] = df2[indexvariable].astype(str)
-        df1 = df1.set_index(indexvariable)
-        df2 = df2.set_index(indexvariable)
-        df_merged = df2.combine_first(df1).reset_index()
-        return df_merged
+        if df2 is not None and not df2.empty:
+            df1[indexvariable] = df1[indexvariable].astype(str)
+            df2[indexvariable] = df2[indexvariable].astype(str)
+            df1 = df1.set_index(indexvariable)
+            df2 = df2.set_index(indexvariable)
+            df_merged = df2.combine_first(df1).reset_index()
+            return df_merged
 
     def saveToFile(self, df, filename):
-        full_path = os.path.join(self.storage_dir, f"{filename}.pkl")
-        df.to_pickle(full_path)
+        if df is not None:
+            full_path = os.path.join(self.storage_dir, f"{filename}.pkl")
+            df.to_pickle(full_path)
     
     def readFile(self, filename):
         full_path = os.path.join(self.storage_dir, f"{filename}.pkl")
