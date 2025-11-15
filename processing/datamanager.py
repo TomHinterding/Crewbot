@@ -18,6 +18,10 @@ class Datamanager:
             df_merged = df2.combine_first(df1).reset_index()
             return df_merged
 
+    def fileExists(self, filename):
+        full_path = os.path.join(self.storage_dir, f"{filename}.pkl")
+        return os.path.exists(full_path)
+
     async def saveToFile(self, df, filename):
         if df is not None:
             full_path = os.path.join(self.storage_dir, f"{filename}.pkl")

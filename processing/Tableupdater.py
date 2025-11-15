@@ -15,10 +15,10 @@ class Tableupdater():
         pass
 
     async def initializeTables(self):
-        await dm.saveToFile(ds.createTable("Clans"), "Clans")
-        await dm.saveToFile(ds.createTable("Players"), "Players")
-        await dm.saveToFile(ds.createTable("Wars"), "Wars")
-        await dm.saveToFile(ds.createTable("Attacks"), "Attacks")
+        tables = ["Clans", "Players", "Wars", "Attacks"]
+        for table in tables:
+            if dm.fileExists(table):
+                await dm.saveToFile(ds.createTable(table), table)
 
     async def updateTables(self, df):
         ...
