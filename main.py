@@ -14,15 +14,4 @@ print(Wars.head())
 dm.saveToFile(Wars, "Attacks")
 
 if __name__ == "__main__":
-    Wars = dm.readFile("Attacks")
-    if Wars.empty:
-        dm.saveToFile(gt.getAttacktable(input("enter Clantag:")), "Attacks")
-        Wars = dm.readFile("Attacks")
-    print(Wars)
-    addclan = True
-    while addclan == True:
-        Wars = nd.addNewAttacks(Wars, input("enter another Clantag:"))
-        dm.saveToFile(Wars, "Clans")
-        print(Wars)
-        addclan = input("Do you want to add another Clan to the table? (y/n):").lower().startswith('y')
-
+    pass

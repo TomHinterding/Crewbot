@@ -9,6 +9,7 @@ from processing import datamanager as datman
 from api import client
 import requests as req
 import json
+from datetime import datetime
 
 dm = datman.Datamanager()
 cl = client.APIManager()
@@ -23,6 +24,7 @@ handler = logging.FileHandler(filename="discord.log", encoding='utf-8', mode='w'
 formatter = logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+ALLOWED_GUILDS = {491691533461094416, 573374059052531712}
 
 class CrewManager(commands.Bot):
     def __init__(self):
@@ -71,6 +73,12 @@ async def clan_remove_autocomplete(interaction: discord.Interaction, clan: str):
         if row["clanname"].lower().startswith(clan.lower()):
             choices.append(app_commands.Choice(name = f"{row['clanname']} | {row['clantag']}", value = f"{row["clantag"]}"))
     return choices[:15]
+
+#disable commands on unknown servers
+@bot.check
+async def only_in_allowed_guilds(ctx):
+    return ctx.guild and ctx.guild.id in ALLOWED_GUILDS
+
 
 #clan adder
 @bot.tree.command(name = "trackclan", description="Füge einen Clan zur liste getrackter Clans hinzu")
@@ -159,4 +167,46 @@ async def removemember(interaction: discord.Interaction, member: discord.Member)
     print(bot.members)
     dm.saveToFile(bot.members, "Tracked Members") 
     await interaction.response.send_message(f"```✅ removed {member.name} from List.```", ephemeral=True)
+
+#display functions
+
+#shows wich clans are currently tracked
+@bot.tree.command(name = "trackedclans", description="Zeigt an welche Clans aktuell getrackt werden")
+async def trackedclans(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="Getrackte Clans",
+        description="*Die folgenden Clans werden aktuell getrackt.*",
+        color= discord.Color.random(),
+        timestamp= discord.utils.utcnow()
+    )
+    clantext = ""
+    tagtext = ""
+    print(bot.clans)
+    for i, row in bot.clans.iterrows():
+       clantext += f"`{row['clanname']}`\n"
+       tagtext += f"`{row['clantag']}`\n"
+    embed.add_field(name="Clan", value=f"{clantext}")
+    embed.add_field(name="Tag", value= f"{tagtext}")
+    await interaction.response.send_message(embed=embed)
+
+#shows wich players are currently tracked
+@bot.tree.command(name = "trackedplayers", description="Zeigt an welche Spieler aktuell getrackt werden")
+async def trackedplayers(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="Getrackte Spieler",
+        description="*Die folgenden Spieler werden aktuell getrackt.*",
+        color= discord.Color.random(),
+        timestamp= discord.utils.utcnow()
+    )
+    playertext = ""
+    tagtext = ""
+    print(bot.members)
+    for i, row in bot.members.iterrows():
+       playertext += f"`{row['username']}`\n"
+       tagtext += f"`{row['tags']}`\n"
+    embed.add_field(name="Discord member", value=f"{playertext}")
+    embed.add_field(name="Tags", value= f"{tagtext}")
+    print(bot.members)
+    await interaction.response.send_message(embed=embed)
+
 bot.run(token)

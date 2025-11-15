@@ -1,7 +1,7 @@
 import api.client as c
 import pandas as pd
 import processing.datamanager as dm
-
+from datetime import datetime
 class getTables:
     def __init__(self):
         self.api = c.APIManager()
@@ -35,7 +35,7 @@ class getTables:
         responseData = self.api.getResponse(f"{self.api.baseUrl}clans/{clantag}/currentwar")
         warDict = createTable("Wars")
         if "notInWar" != responseData["state"]:
-            warDict["startTime"].append(responseData["startTime"])
+            warDict["startTime"].append(datetime.fromisoformat(responseData["startTime"].replace("Z", "+00:00")))
             warDict["clantag1"].append(responseData["clan"]["tag"])
             warDict["clantag2"].append(responseData["opponent"]["tag"])
             warDict["stars"].append(responseData["clan"]["stars"])
@@ -64,7 +64,7 @@ class getTables:
                         attackDict["attackername"].append(rawAttackList[u]["name"])
                         attackDict["attacknum"].append(i+1)
                         attackDict["warclantag"].append(responseData["clan"]["tag"])
-                        attackDict["wardate"].append(responseData["startTime"])
+                        attackDict["wardate"].append(datetime.fromisoformat(responseData["startTime"].replace("Z", "+00:00")))
                         attackDict["stars"].append(rawAttackList[u]["attacks"][i]["stars"])
                         attackDict["percentage"].append(rawAttackList[u]["attacks"][i]["destructionPercentage"])
                     if len(rawAttackList[u]["attacks"]) == 1:
@@ -72,7 +72,7 @@ class getTables:
                         attackDict["attackername"].append(rawAttackList[u]["name"])
                         attackDict["attacknum"].append(2)
                         attackDict["warclantag"].append(responseData["clan"]["tag"])
-                        attackDict["wardate"].append(responseData["startTime"])
+                        attackDict["wardate"].append(datetime.fromisoformat(responseData["startTime"].replace("Z", "+00:00")))
                         attackDict["stars"].append(0)
                         attackDict["percentage"].append(0)
                 else:
@@ -81,7 +81,7 @@ class getTables:
                         attackDict["attackername"].append(rawAttackList[u]["name"])
                         attackDict["attacknum"].append(i+1)
                         attackDict["warclantag"].append(responseData["clan"]["tag"])
-                        attackDict["wardate"].append(responseData["startTime"])
+                        attackDict["wardate"].append(datetime.fromisoformat(responseData["startTime"].replace("Z", "+00:00")))
                         attackDict["stars"].append(0)
                         attackDict["percentage"].append(0)
 
