@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import api.data_service as ds
+import asyncio
 
 class Datamanager:
 
@@ -17,12 +18,12 @@ class Datamanager:
             df_merged = df2.combine_first(df1).reset_index()
             return df_merged
 
-    def saveToFile(self, df, filename):
+    async def saveToFile(self, df, filename):
         if df is not None:
             full_path = os.path.join(self.storage_dir, f"{filename}.pkl")
-            df.to_pickle(full_path)
+            await asyncio.to_thread(df.to_pickle, full_path)
     
-    def readFile(self, filename):
+    async def readFile(self, filename):
         full_path = os.path.join(self.storage_dir, f"{filename}.pkl")
-        file = pd.read_pickle(full_path)
+        file = await asyncio.to_thread(pd.read_pickle, full_path)
         return file
