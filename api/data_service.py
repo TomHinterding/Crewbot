@@ -2,10 +2,18 @@ import api.client as c
 import pandas as pd
 import processing.datamanager as dm
 from datetime import datetime
+from datetime import date
+import pytz
+
+
 class getTables:
     def __init__(self):
         self.api = c.APIManager()
+        self.tz = pytz.timezone("Europe/Berlin")
+    
 
+
+    #if else statementl, in case warlog is not public
     def getClantable(self, clantag):
         clantag = c.urlTag(clantag)
         responseData = self.api.getResponse(f"{self.api.baseUrl}clans/{clantag}")
@@ -16,7 +24,7 @@ class getTables:
             else:
                 clanData[col].append(0)
         clanData = pd.DataFrame(clanData)
-        return clanData
+        return clanData 
     
     def getMemberTable(self, clantag):
         clantag = c.urlTag(clantag)
@@ -26,6 +34,7 @@ class getTables:
         for i in range(len(rawMemberList)):
             for col in memberDict:
                 memberDict[col].append(rawMemberList[i][col])
+            memberDict["lastSeen"].append(datetime.now(self.tz).now)
         memberDict = pd.DataFrame(memberDict)
         memberDict["role"] = memberDict["role"].replace("admin", "elder")
         return memberDict
@@ -137,7 +146,7 @@ class updateTables:
 #creates a Table with predefined column names based on Keyword you use
 def createTable(tablename):
     Clans = {"tag" : [], "name" : [], "members" : [], "clanLevel" : [], "warWins" : [], "warTies" : [], "warLosses": [], "isWarLogPublic" : []}
-    Players = {"tag" : [], "name" : [], "clantag" : [], "role" : [], "townHallLevel" : [], "trophies" : [], "clanRank" : [], "donationsReceived" : [], "donations" : [], "expLevel" : []}
+    Players = {"tag" : [], "name" : [], "clantag" : [], "role" : [], "townHallLevel" : [], "trophies" : [], "clanRank" : [], "donationsReceived" : [], "donations" : [], "expLevel" : [], "lastSeen": []}
     Wars = {"startTime": [], "clantag1" : [], "clantag2" : [], "stars" : [], "percentage": [], "opponentStars" : [], "opponentPercentage" : []}
     Attacks = {"attackertag" :[], "attackername" : [], "attacknum" : [], "warclantag" : [], "wardate" : [], "stars" : [], "percentage" : []}
     Tables = {"Clans" : Clans, "Players" : Players, "Wars" : Wars, "Attacks" : Attacks}
